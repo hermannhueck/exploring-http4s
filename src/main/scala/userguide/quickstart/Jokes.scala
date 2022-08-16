@@ -1,4 +1,4 @@
-package quickstart
+package userguide.quickstart
 
 import cats.effect.Concurrent
 import cats.implicits._

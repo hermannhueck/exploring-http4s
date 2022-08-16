@@ -1,4 +1,4 @@
-package quickstart
+package userguide.quickstart
 
 import cats.effect.{ExitCode, IO, IOApp}
 
