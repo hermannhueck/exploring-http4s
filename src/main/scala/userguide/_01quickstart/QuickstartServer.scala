@@ -1,4 +1,4 @@
-package userguide.quickstart
+package userguide._01quickstart
 
 import cats.effect.{Async, Resource}
 import cats.syntax.all._

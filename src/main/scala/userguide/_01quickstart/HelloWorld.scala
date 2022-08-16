@@ -1,4 +1,4 @@
-package userguide.quickstart
+package userguide._01quickstart
 
 import cats.Applicative
 import cats.implicits._

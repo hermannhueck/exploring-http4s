@@ -1,4 +1,4 @@
-package userguide.quickstart
+package userguide._01quickstart
 
 import cats.effect.IO
 import org.http4s._
