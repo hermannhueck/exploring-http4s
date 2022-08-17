@@ -1,5 +1,6 @@
-import cats.effect._
+import cats._
 import cats.syntax.all._
+import cats.effect._
 import org.http4s._
 import org.http4s.implicits._
 import org.http4s.dsl.io._
@@ -15,18 +16,18 @@ val service = HttpRoutes.of[IO] { case _ =>
 
 // ----- Testing the Service -----
 
-val getRoot = Request[IO](method = Method.GET, uri = uri"/")
+val getRoot: Request[IO] = Request[IO](method = Method.GET, uri = uri"/")
 
-val serviceIO = service.orNotFound.run(getRoot)
+val serviceIO: IO[Response[IO]] = service.orNotFound.run(getRoot)
 
-val response = serviceIO.unsafeRunSync()
+val response: Response[IO] = serviceIO.unsafeRunSync()
 
 // ----- Generating Responses -----
 
 // Status Codes
 
-val okIo = Ok()
-val ok   = okIo.unsafeRunSync()
+val okIo: IO[Response[IO]] = Ok()
+val ok: Response[IO]       = okIo.unsafeRunSync()
 
 HttpRoutes
   .of[IO] { case _ =>
@@ -70,8 +71,8 @@ Ok("Ok response.")
 
 val cookieResp = {
   for {
-    resp <- Ok("Ok response.")
-    now  <- HttpDate.current[IO]
+    resp: Response[IO] <- Ok("Ok response.")
+    now: HttpDate      <- HttpDate.current[IO]
   } yield resp.addCookie(ResponseCookie("foo", "bar", expires = Some(now), httpOnly = true, secure = true))
 }
 
@@ -174,9 +175,43 @@ HttpRoutes.of[IO] { case GET -> "hello" /: rest =>
   Ok(s"""Hello, ${rest.segments.mkString(" and ")}!""")
 }
 
+HttpRoutes
+  .of[IO] { case GET -> "hello" /: rest =>
+    Ok(s"""Hello, ${rest.segments.mkString(" and ")}!""")
+  }                                                                   // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
+  .orNotFound                                                         // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
+  .run(Request[IO](method = Method.GET, uri = uri"/hello/Alice/Bob")) // : IO[Response[IO]]
+  .unsafeRunSync()                                                    // : Response[IO]
+  .body                                                               // : EntityBody[IO] ( = Stream[IO, Byte] )
+  .through(fs2.text.utf8.decode)                                      // : Stream[IO, String]
+  .compile                                                            // : Stream.CompileOps[IO, IO, String]
+  .toVector                                                           // : IO[Vector[String]]
+  .unsafeRunSync()                                                    // : Vector[String]
+  .head                                                               // : String
+// "Hello, Alice and Bob!"
+
 HttpRoutes.of[IO] { case GET -> Root / file ~ "json" =>
   Ok(s"""{"response": "You asked for $file"}""")
 }
+
+import scala.util.chaining._
+
+val suffix = "json"
+HttpRoutes
+  .of[IO] { case GET -> Root / file ~ suffix =>
+    Ok(s"""{"response": "You asked for file: $file.$suffix"}""")
+  }
+  .orNotFound // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
+  .run(Request[IO](method = Method.GET, uri = uri"/user.json")) // : IO[Response[IO]]
+  .unsafeRunSync()                                              // : Response[IO]
+  .body                                                         // : EntityBody[IO] ( = Stream[IO, Byte] )
+  .through(fs2.text.utf8.decode)                                // : Stream[IO, String]
+  .compile                                                      // : : Stream.CompileOps[IO, IO, String]
+  .toVector                                                     // : IO[Vector[String]]
+  .unsafeRunSync()                                              // : Vector[String]
+  .head                                                         // : String
+  .tap(println)
+// "{\"response\": \"You asked for file: user.json\"}"
 
 // Handling Path Parameters
 
@@ -192,26 +227,41 @@ import org.http4s.client.dsl.io._
 
 object LocalDateVar {
   def unapply(str: String): Option[LocalDate] = {
-    if (!str.isEmpty)
-      Try(LocalDate.parse(str)).toOption
+    if (str.trim.isEmpty)
+      Option.empty[LocalDate]
     else
-      None
+      Try(LocalDate.parse(str)).toOption
   }
 }
 
 @annotation.nowarn("cat=unused")
-def getTemperatureForecast(date: LocalDate): IO[Double] = IO(42.23)
+def getTemperatureForecast(date: LocalDate): IO[Double] = IO(31.5)
 
 val dailyWeatherService = HttpRoutes.of[IO] { case GET -> Root / "weather" / "temperature" / LocalDateVar(localDate) =>
   Ok(
     getTemperatureForecast(localDate)
-      .map(s"The temperature on $localDate will be: " + _)
+      .map(temp => s"The temperature on $localDate will be: $temp")
   )
 }
 
-val req = GET(uri"/weather/temperature/2016-11-05")
+val req = GET(uri"/weather/temperature/2022-08-05")
 
-dailyWeatherService.orNotFound(req).unsafeRunSync()
+dailyWeatherService              // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
+  .orNotFound(req)               // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
+  .unsafeRunSync()               // : Response[IO]
+  .body                          // : EntityBody[IO] ( = Stream[IO, Byte] )
+  .through(fs2.text.utf8.decode) // : Stream[IO, String]
+  .compile                       // : Stream.CompileOps[IO, IO, String]
+  .toVector                      // : IO[Vector[String]]
+  .unsafeRunSync()               // : Vector[String]
+  .head                          // : String
+
+import userguide.util._
+
+dailyWeatherService       // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
+  .orNotFound(req)        // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
+  .unsafeRunSync()        // : Response[IO]
+  .pipe(evalBodyAsString) // : String
 
 // Handling Matrix Path Parameters
 
@@ -223,9 +273,16 @@ val greetingService = HttpRoutes.of[IO] { case GET -> Root / "hello" / FullNameE
   Ok(s"Hello, $first $last.")
 }
 
+greetingService           // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
+  .orNotFound(
+    GET(uri"/hello/name;first=john;last=doe/greeting")
+  )                       // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
+  .unsafeRunSync()        // : Response[IO]
+  .pipe(evalBodyAsString) // : String
+
 greetingService
-  .orNotFound(GET(uri"/hello/name;first=john;last=doe/greeting"))
-  .unsafeRunSync()
+  .pipe(runWithRequest(_, GET(uri"/hello/name;first=john;last=doe/greeting")))
+  .pipe(evalBodyAsString)
 
 object FullNameAndIDExtractor extends MatrixVar("name", List("first", "last", "id"))
 
@@ -235,8 +292,8 @@ val greetingWithIdService = HttpRoutes.of[IO] {
 }
 
 greetingWithIdService
-  .orNotFound(GET(uri"/hello/name;first=john;last=doe;id=123/greeting"))
-  .unsafeRunSync()
+  .pipe(runWithRequest(_, GET(uri"/hello/name;first=john;last=doe;id=123/greeting")))
+  .pipe(evalBodyAsString)
 
 // Handling Query Parameters
 
@@ -250,7 +307,9 @@ implicit val yearQueryParamDecoder: QueryParamDecoder[Year] =
 
 object YearQueryParamMatcher extends QueryParamDecoderMatcher[Year]("year")
 
-def getAverageTemperatureForCountryAndYear(country: String, year: Year): IO[Double] = ???
+@annotation.nowarn("cat=unused")
+def getAverageTemperatureForCountryAndYear(country: String, year: Year): IO[Double] =
+  IO(9.1)
 
 val averageTemperatureService = HttpRoutes.of[IO] {
   case GET -> Root / "weather" / "temperature" :? CountryQueryParamMatcher(country) +& YearQueryParamMatcher(year) =>
@@ -259,6 +318,12 @@ val averageTemperatureService = HttpRoutes.of[IO] {
         .map(s"Average temperature for $country in $year was: " + _)
     )
 }
+
+averageTemperatureService
+  .pipe(runWithRequest(_, GET(uri"/weather/temperature?country=Germany&year=2021")))
+  .pipe(evalBodyAsString)
+
+// Codec for Instant
 
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -276,17 +341,28 @@ object IsoInstantParamMatcher extends QueryParamDecoderMatcher[Instant]("timesta
 
 object OptionalYearQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Year]("year")
 
-def getAverageTemperatureForCurrentYear: IO[String]   = ???
-def getAverageTemperatureForYear(y: Year): IO[String] = ???
+def getAverageTemperatureForCurrentYear: IO[String]   = IO("10.1")
+@annotation.nowarn("cat=unused")
+def getAverageTemperatureForYear(y: Year): IO[String] = IO("9.1")
 
-val routes = HttpRoutes.of[IO] { case GET -> Root / "temperature" :? OptionalYearQueryParamMatcher(maybeYear) =>
-  maybeYear match {
-    case None       =>
-      Ok(getAverageTemperatureForCurrentYear)
-    case Some(year) =>
-      Ok(getAverageTemperatureForYear(year))
+val routes = HttpRoutes
+  .of[IO] { case GET -> Root / "temperature" :? OptionalYearQueryParamMatcher(maybeYear) =>
+    maybeYear match {
+      case None       =>
+        Ok(getAverageTemperatureForCurrentYear)
+      case Some(year) =>
+        Ok(getAverageTemperatureForYear(year))
+    }
   }
-}
+
+routes
+  .pipe(runWithRequest(_, GET(uri"/temperature")))
+  .pipe(evalBodyAsString)
+// 10.1
+routes
+  .pipe(runWithRequest(_, GET(uri"/temperature?year=2021")))
+  .pipe(evalBodyAsString)
+// 9.1
 
 // Invalid Query Parameter Handling
 
@@ -301,12 +377,26 @@ val yearQueryParamDecoder2: QueryParamDecoder[Year] =
 
 object YearQueryParamMatcher2 extends ValidatingQueryParamDecoderMatcher[Year]("year")(yearQueryParamDecoder2)
 
-val routes2 = HttpRoutes.of[IO] { case GET -> Root / "temperature" :? YearQueryParamMatcher2(yearValidated) =>
-  yearValidated.fold(
-    parseFailures => BadRequest("unable to parse argument year; failures: " + parseFailures),
-    year => Ok(getAverageTemperatureForYear(year))
-  )
-}
+val routes2 = HttpRoutes
+  .of[IO] { case GET -> Root / "temperature" :? YearQueryParamMatcher2(yearValidated) =>
+    yearValidated.fold(
+      parseFailures => BadRequest("unable to parse argument year; failures: " + parseFailures),
+      year => Ok(getAverageTemperatureForYear(year))
+    )
+  }
+
+routes2
+  .pipe(runWithRequest(_, GET(uri"/temperature")))
+  .pipe(evalBodyAsString)
+// Not Found
+routes2
+  .pipe(runWithRequest(_, GET(uri"/temperature?year=2021")))
+  .pipe(evalBodyAsString)
+// 9.1
+routes2
+  .pipe(runWithRequest(_, GET(uri"/temperature?year=not-a-valid-year")))
+  .pipe(evalBodyAsString)
+// "unable to parse argument year; failures: NonEmptyList(org.http4s.ParseFailure: Query decoding Int failed: For input string: \"not-a-valid-year\")"
 
 // Optional Invalid Query Parameter Handling
 
@@ -319,9 +409,23 @@ val routes3 = HttpRoutes.of[IO] { case GET -> Root / "number" :? LongParamMatche
     case None       =>
       BadRequest("missing number")
     case Some(long) =>
-      long.fold(
-        parseFailures => BadRequest("unable to parse argument 'long'; failures: " + parseFailures),
-        year => Ok(year.toString)
-      )
+      long // : cats.data.ValidatedNel[org.http4s.ParseFailure, Long]
+        .fold(
+          parseFailures => BadRequest("unable to parse argument 'long'; failures: " + parseFailures),
+          year => Ok(year.toString)
+        ) // : IO[Response[IO]]
   }
 }
+
+routes3
+  .pipe(runWithRequest(_, GET(uri"/number")))
+  .pipe(evalBodyAsString)
+// "missing number"
+routes3
+  .pipe(runWithRequest(_, GET(uri"/number?long=42")))
+  .pipe(evalBodyAsString)
+// "42"
+routes3
+  .pipe(runWithRequest(_, GET(uri"/number?long=not-a-valid-long")))
+  .pipe(evalBodyAsString)
+// "unable to parse argument 'long'; failures: NonEmptyList(org.http4s.ParseFailure: Query decoding Long failed: For input string: \"not-a-valid-long\")"
