@@ -44,6 +44,7 @@ lazy val root = (project in file("."))
       http4sDsl,
       http4sCirce,
       circeGeneric,
+      reactormonk,
       munit, // use munit also for compiling
       munitCE3 % Test,
       logback  % Runtime,
