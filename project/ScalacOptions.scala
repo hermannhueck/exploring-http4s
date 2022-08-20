@@ -3,6 +3,7 @@ import sbt._
 object ScalacOptions {
 
   lazy val defaultScalacOptions = Seq(
+    // "-Xlog-implicits",
     "-encoding",
     "UTF-8",                                     // source files are in UTF-8
     "-deprecation",                              // warn about use of deprecated APIs
