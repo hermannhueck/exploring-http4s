@@ -44,10 +44,12 @@ lazy val root = (project in file("."))
       http4sDsl,
       http4sCirce,
       circeGeneric,
+      circeLiteral,
       reactormonk,
       munit, // use munit also for compiling
       munitCE3 % Test,
       logback  % Runtime,
+      // swaggerUI, // for webjar example
       // compiler plugins
       kindProjectorPlugin,
       betterMonadicForPlugin

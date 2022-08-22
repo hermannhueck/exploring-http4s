@@ -10,11 +10,13 @@ object Dependencies {
   lazy val http4sDsl         = "org.http4s"      %% "http4s-dsl"          % Http4sVersion
   lazy val http4sCirce       = "org.http4s"      %% "http4s-circe"        % Http4sVersion
   lazy val circeGeneric      = "io.circe"        %% "circe-generic"       % CirceVersion
+  lazy val circeLiteral      = "io.circe"        %% "circe-literal"       % CirceVersion
   lazy val munit             = "org.scalameta"   %% "munit"               % MunitVersion
   lazy val scalaCheck        = "org.scalacheck"  %% "scalacheck"          % ScalaCheckVersion
   lazy val munitCE3          = "org.typelevel"   %% "munit-cats-effect-3" % MunitCE3Version
   lazy val logback           = "ch.qos.logback"   % "logback-classic"     % LogbackVersion
   lazy val reactormonk       = "org.reactormonk" %% "cryptobits"          % ReaktormonkVersion
+  lazy val swaggerUI         = "org.webjars"      % "swagger-ui"          % SwaggerUIVersion
 
   // https://github.com/typelevel/kind-projector
   lazy val kindProjectorPlugin    = compilerPlugin(

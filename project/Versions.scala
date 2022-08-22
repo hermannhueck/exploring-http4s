@@ -16,6 +16,7 @@ object Versions {
   val ScalaCheckVersion  = "1.16.0"
   val LogbackVersion     = "1.2.11"
   val ReaktormonkVersion = "1.3.1"
+  val SwaggerUIVersion   = "4.11.1"
 
   // compiler plugins
   val kindProjectorVersion    = "0.13.2"
