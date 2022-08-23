@@ -21,6 +21,7 @@ object HelloServerApp extends IOApp.Simple {
 
   val jsonApp = HttpRoutes
     .of[IO] { case req @ POST -> Root / "hello" =>
+      println(s"Received request: $req")
       for {
         // Decode a User request
         user <- req.as[User]
