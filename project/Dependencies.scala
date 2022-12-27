@@ -26,4 +26,24 @@ object Dependencies {
   lazy val betterMonadicForPlugin = compilerPlugin(
     compilerPlugin("com.olegpy" %% "better-monadic-for" % betterMonadicForVersion)
   )
+
+  lazy val libraryDependencies = Seq(
+    http4sBlazeServer,
+    http4sEmberServer,
+    http4sEmberClient,
+    http4sDsl,
+    http4sCirce,
+    circeGeneric,
+    circeLiteral,
+    reactormonk,
+    munit, // use munit also for compiling
+    munitCE3 % Test,
+    logback  % Runtime,
+    // swaggerUI, // for webjar example
+    // compiler plugins
+    kindProjectorPlugin,
+    betterMonadicForPlugin
+  ) ++ Seq(
+    scalaCheck
+  ).map(_ % Test)
 }

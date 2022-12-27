@@ -10,6 +10,7 @@ output/
 .metals/
 .vscode/
 .ammonite/
+.scala-build/
 
 # files
 *.class

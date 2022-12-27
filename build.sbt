@@ -1,7 +1,3 @@
-import Versions._
-import Dependencies._
-import ScalacOptions._
-
 val projectName        = "exploring-http4s"
 val projectDescription = "Exploring Http4s"
 
@@ -12,13 +8,15 @@ Global / onChangedBuildSource      := ReloadOnSourceChanges
 
 inThisBuild(
   Seq(
-    version                  := projectVersion,
-    scalaVersion             := scala2Version,
+    version                  := Versions.projectVersion,
+    scalaVersion             := Versions.scala2Version,
     publish / skip           := true,
-    scalacOptions ++= defaultScalacOptions,
+    scalacOptions ++= ScalacOptions.defaultScalacOptions,
     semanticdbEnabled        := true,
     semanticdbVersion        := scalafixSemanticdb.revision,
-    scalafixDependencies ++= Seq("com.github.liancheng" %% "organize-imports" % scalafixOrganizeImportsVersion),
+    scalafixDependencies ++= Seq(
+      "com.github.liancheng" %% "organize-imports" % Versions.scalafixOrganizeImportsVersion
+    ),
     Test / parallelExecution := false,
     // run 100 tests for each property // -s = -minSuccessfulTests
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-s", "100"),
@@ -32,28 +30,9 @@ inThisBuild(
 )
 
 lazy val root = (project in file("."))
-  // .dependsOn(hutil)
   .settings(
     name                              := projectName,
     description                       := projectDescription,
-    Compile / console / scalacOptions := consoleScalacOptions,
-    libraryDependencies ++= Seq(
-      http4sBlazeServer,
-      http4sEmberServer,
-      http4sEmberClient,
-      http4sDsl,
-      http4sCirce,
-      circeGeneric,
-      circeLiteral,
-      reactormonk,
-      munit, // use munit also for compiling
-      munitCE3 % Test,
-      logback  % Runtime,
-      // swaggerUI, // for webjar example
-      // compiler plugins
-      kindProjectorPlugin,
-      betterMonadicForPlugin
-    ) ++ Seq(
-      scalaCheck
-    ).map(_ % Test)
+    Compile / console / scalacOptions := ScalacOptions.consoleScalacOptions,
+    libraryDependencies ++= Dependencies.libraryDependencies
   )

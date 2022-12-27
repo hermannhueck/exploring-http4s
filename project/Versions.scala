@@ -4,7 +4,7 @@ object Versions {
   val projectVersion = "0.1.0"
 
   // Scala
-  val scala2Version = "2.13.10"
+  val scala2Version = "2.13.9"
 
   // 3rd party libraries
   val Http4sVersion      = "1.0.0-M37"
