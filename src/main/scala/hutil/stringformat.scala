@@ -36,6 +36,10 @@ package object stringformat { self =>
   @inline def dash80: String  = dash(80)
   @inline def dash100: String = dash(100)
 
+  @inline def line5: String  = dash(5)
+  @inline def line10: String = dash(10)
+  @inline def line80: String = dash(80)
+
   implicit class StringSyntax(private val what: String) extends AnyVal {
 
     @inline def boxed: String =

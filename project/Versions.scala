@@ -17,6 +17,7 @@ object Versions {
   val LogbackVersion     = "1.4.5"
   val ReaktormonkVersion = "1.3.1"
   val SwaggerUIVersion   = "4.11.1"
+  val Slf4jVersion       = "2.0.6"
 
   // compiler plugins
   val kindProjectorVersion    = "0.13.2"

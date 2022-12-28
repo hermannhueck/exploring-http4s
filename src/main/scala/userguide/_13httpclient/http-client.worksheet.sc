@@ -29,12 +29,22 @@ import java.util.concurrent._
 val blockingPool           = Executors.newFixedThreadPool(5)
 val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
-// Describing a call
-
-val helloJames = httpClient.expect[String]("http://localhost:8080/hello/James")
-
 import cats._, cats.effect._, cats.implicits._
 import org.http4s.Uri
+
+// Describing a call
+
+val helloJames             =
+  httpClient.expect[String]("http://localhost:8080/hello/James")
+val helloEmber: IO[String] =
+  httpClient.expect[String]("http://localhost:8080/hello/Ember")
+
+// Running the call
+
+// helloJames.unsafeRunSync()
+// helloEmber.unsafeRunSync()
+
+// Describing 4 calls
 
 def hello(name: String): IO[String] = {
   val target = uri"http://localhost:8080/hello/" / name
@@ -43,11 +53,11 @@ def hello(name: String): IO[String] = {
 
 val people = Vector("Michael", "Jessica", "Ashley", "Christopher")
 
-val greetingList = people.parTraverse(hello)
-
-// Making the call
+val greetingList: IO[Vector[String]] = people.parTraverse(hello)
 
 val greetingsStringEffect = greetingList.map(_.mkString("\n"))
+
+// Running the calls
 
 // requires running server
 // greetingsStringEffect.unsafeRunSync()
@@ -93,19 +103,38 @@ f2(x)
 // Send a GET request, treating the response as a string
 
 // requires running server
-httpClient
-  .expect[String](uri"http://localhost:8080/hello/James")
-// .unsafeRunSync()
+// httpClient
+//   .expect[String](uri"http://localhost:8080/hello/James")
+//   .unsafeRunSync()
 
 httpClient
-  .expect[String](uri"https://www.google.com/")
+  .expect[String](uri"https://httpbin.org/get")
+  .unsafeRunSync()
+
+import cats.effect.MonadCancelThrow
+import org.typelevel.ci._
+
+def addTestHeader[F[_]: MonadCancelThrow](underlying: Client[F]): Client[F] = Client[F] { req =>
+  underlying
+    .run(
+      req.withHeaders(Header.Raw(ci"X-Test-Request", "test"))
+    )
+    .map(
+      _.withHeaders(Header.Raw(ci"X-Test-Response", "test"))
+    )
+}
+
+val testClient = addTestHeader(httpClient)
+
+testClient
+  .expect[String](uri"https://httpbin.org/get")
   .unsafeRunSync()
 
 import org.http4s.client.dsl.io._
 import org.http4s.headers._
 import org.http4s.MediaType
 
-val request = GET(
+val request: Request[IO] = GET(
   uri"https://my-lovely-api.com/",
   Authorization(Credentials.Token(AuthScheme.Bearer, "open sesame")),
   Accept(MediaType.application.json)
@@ -121,8 +150,7 @@ assertEquals(headers.get("Accept"), Some("application/json"))
 assertEquals(request.headers.get(CIString("Authorization")).get.head.value, "Bearer open sesame")
 assertEquals(request.headers.get(CIString("Accept")).get.head.value, "application/json")
 
-httpClient
-  .expect[String](request)
+httpClient.expect[String](request)
 
 // Post a form, decoding the JSON response to a case class
 
@@ -146,3 +174,17 @@ val postRequest = POST(
 httpClient.expect[AuthResponse](postRequest)
 
 // ----- Body decoding / encoding -----
+
+val endpoint = uri"http://localhost:8080/hellox/Ember"
+val result   = httpClient.get[Either[String, String]](endpoint) {
+  case Status.Successful(response) =>
+    response
+      .attemptAs[String]
+      .leftMap(_.message)
+      .value
+  case response                    =>
+    response
+      .as[String]
+      .map(body => Left(s"Request failed with status '${response.status.code}' and body '$body'"))
+}
+// result.unsafeRunSync()
