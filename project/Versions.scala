@@ -7,7 +7,7 @@ object Versions {
   val scala2Version = "2.13.9"
 
   // 3rd party libraries
-  val http4sVersion      = "1.0.0-M37"
+  val http4sVersion      = "1.0.0-M38"
   val circeVersion       = "0.15.0-M1"
   // val http4sVersion     = "0.23.14"
   // val circeVersion      = "0.14.2"
