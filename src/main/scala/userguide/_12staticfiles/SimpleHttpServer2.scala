@@ -12,25 +12,28 @@ import org.http4s.dsl.io._
 
 object SimpleHttpServer2 extends IOApp {
 
-  val indexServiceIO: HttpRoutes[IO] = HttpRoutes.of[IO] { case request @ GET -> Root / "index.html" =>
-    StaticFile
-      .fromPath(fs2.io.file.Path("assets/index.html"), Some(request))
-      .getOrElseF(NotFound()) // In case the file doesn't exist
-  }
+  val indexServiceIO: HttpRoutes[IO] =
+    HttpRoutes.of[IO] { case request @ GET -> Root / "index.html" =>
+      StaticFile
+        .fromPath(fs2.io.file.Path("assets/index.html"), Some(request))
+        .getOrElseF(NotFound()) // In case the file doesn't exist
+    }
 
-  def indexService[F[_]: Async]: HttpRoutes[F] = HttpRoutes.of[F] { case request @ GET -> Root / "index.html" =>
-    val dsl = new Http4sDsl[F] {}
-    import dsl._
-    StaticFile
-      .fromPath[F](fs2.io.file.Path("assets/index.html"), Some(request))
-      .getOrElseF(NotFound()) // In case the file doesn't exist
-  }
+  def indexService[F[_]: Async]: HttpRoutes[F] =
+    HttpRoutes.of[F] { case request @ GET -> Root / "index.html" =>
+      val dsl = new Http4sDsl[F] {}
+      import dsl._
+      StaticFile
+        .fromPath[F](fs2.io.file.Path("assets/index.html"), Some(request))
+        .getOrElseF(NotFound()) // In case the file doesn't exist
+    }
 
-  def anotherService[F[_]: Monad]: HttpRoutes[F] = HttpRoutes.of[F] { case _ =>
-    val dsl = new Http4sDsl[F] {}
-    import dsl._
-    Ok("HELLO WORLD !!!\n")
-  }
+  def anotherService[F[_]: Monad]: HttpRoutes[F] =
+    HttpRoutes.of[F] { case _ =>
+      val dsl = new Http4sDsl[F] {}
+      import dsl._
+      Ok("HELLO WORLD !!!\n")
+    }
 
   def httpApp[F[_]: Async]: HttpApp[F] =
     Router[F](

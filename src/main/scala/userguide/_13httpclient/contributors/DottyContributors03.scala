@@ -39,7 +39,8 @@ object DottyContributors03 extends IOApp.Simple {
 
     import io.circe.generic.auto._ // auto-gernerate and implicitly provide Decoder for Contributor
 
-    implicit def decodeListJson[A: Decoder]: EntityDecoder[IO, List[A]] = jsonOf[IO, List[A]]
+    implicit def decodeListJson[A: Decoder]: EntityDecoder[IO, List[A]] =
+      jsonOf[IO, List[A]]
     // implicitly[Decoder[Contributor]]
     // implicitly[Decoder[List[Contributor]]]
 

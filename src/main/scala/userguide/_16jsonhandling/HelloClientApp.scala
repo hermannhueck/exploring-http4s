@@ -4,8 +4,9 @@ import cats.effect._
 
 import io.circe.generic.auto._
 import io.circe.syntax._
+// import io.circe.Json
 
-import org.http4s._
+// import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.client.dsl.io._
@@ -13,13 +14,10 @@ import org.http4s.ember.client._
 import org.http4s.implicits._
 
 import Domain._
-import io.circe.Json
 
 object HelloClientApp extends IOApp.Simple {
 
-  implicit val userDecoder: EntityDecoder[IO, User] = jsonOf[IO, User]
-
-  def helloClient(name: String): IO[Json] = {
+  def helloClient(name: String): IO[Hello] = {
     // Encode a User request
     val req = POST(User(name).asJson, uri"http://localhost:8080/hello")
     println(req.bodyText)
@@ -28,11 +26,13 @@ object HelloClientApp extends IOApp.Simple {
     // Ideally you should .build.use it once, and share it for multiple requests
     EmberClientBuilder.default[IO].build.use { httpClient =>
       // Decode a Hello response
-      httpClient.expect(req)(jsonOf[IO, Json])
+      // implicit val decoder: EntityDecoder[IO, Hello] =
+      //   jsonOf[IO, Hello]
+      httpClient.expect(req)(jsonOf[IO, Hello])
     }
   }
 
-  val run =
+  val run: IO[Unit] =
     helloClient("Alice")
       .flatTap(IO.println)
       .void

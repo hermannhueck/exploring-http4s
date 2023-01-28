@@ -36,8 +36,11 @@ implicit val runtime: IORuntime = cats.effect.unsafe.IORuntime.global
 
 case class User(id: Long, name: String)
 
+val userId   = 42L
+val userName = "Bob"
+
 val authUser: Kleisli[OptionT[IO, *], Request[IO], User] =
-  Kleisli(_ => OptionT.liftF(IO(User(1, "Bob"))))
+  Kleisli(_ => OptionT.liftF(IO(User(userId, userName))))
 
 val middleware: AuthMiddleware[IO, User] =
   AuthMiddleware(authUser)
@@ -77,6 +80,7 @@ serviceSpanish.orNotFound(Request[IO](Method.GET, uri"/")).unsafeRunSync().statu
 serviceSpanish.orNotFound(Request[IO](Method.GET, uri"/welcome")).unsafeRunSync().status
 serviceSpanish.orNotFound(Request[IO](Method.GET, uri"/bonjour")).unsafeRunSync().status
 serviceSpanish.orNotFound(Request[IO](Method.GET, uri"/hola")).unsafeRunSync().status
+
 serviceSpanish
   .orNotFound(Request[IO](Method.GET, uri"/hola"))
   .unsafeRunSync()
@@ -91,6 +95,7 @@ val serviceRouter = {
 
 serviceRouter.orNotFound(Request[IO](Method.GET, uri"/french/bonjour")).unsafeRunSync().status
 serviceRouter.orNotFound(Request[IO](Method.GET, uri"/spanish/hola")).unsafeRunSync().status
+
 serviceRouter
   .orNotFound(Request[IO](Method.GET, uri"/french/bonjour"))
   .unsafeRunSync()
@@ -128,7 +133,7 @@ val authMiddleware = AuthMiddleware(authUserEither, onFailure)
 
 val serviceKleisli: HttpRoutes[IO] = authMiddleware(authedRoutes)
 
-// ----- Implementing authUser -----
+// ----- Implementing authUser ... -----
 
 import org.reactormonk.{CryptoBits, PrivateKey}
 import scala.io.Codec
@@ -137,6 +142,8 @@ import scala.util.Random
 val key    = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
 val crypto = CryptoBits(key)
 val clock  = java.time.Clock.systemUTC
+
+// ----- ... with Cookie for web pages -----
 
 // gotta figure out how to do the form
 def verifyLogin(request: Request[IO]): IO[Either[String, User]] =
@@ -181,7 +188,7 @@ val authUserCookie: Kleisli[IO, Request[IO], Either[String, User]] =
     message.traverse(retrieveUser.run)
   }
 
-// ----- Authorization Header -----
+// ----- ... with Authorization Header for SPA -----
 
 import org.http4s.headers.Authorization
 

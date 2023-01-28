@@ -10,9 +10,10 @@ implicit val runtime: IORuntime = cats.effect.unsafe.IORuntime.global
 
 // ----- The Simplest Service -----
 
-val service = HttpRoutes.of[IO] { case _ =>
-  IO(Response(Status.Ok))
-}
+val service =
+  HttpRoutes.of[IO] { case _ =>
+    IO(Response(Status.Ok))
+  }
 
 // ----- Testing the Service -----
 
@@ -90,23 +91,26 @@ Ok("binary".getBytes(UTF_8)).unsafeRunSync()
 
 // NoContent("does not compile")
 // error: no arguments allowed for nullary method apply: ()(implicit F: cats.Applicative[cats.effect.IO]): cats.effect.IO[org.http4s.Response[cats.effect.IO]] in trait EmptyResponseGenerator
+NoContent().unsafeRunSync()
 
 // Asynchronous Responses
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-val ioFuture = Ok(IO.fromFuture(IO(Future {
-  println("I run when the future is constructed.")
-  "Greetings from the future!"
-})))
+val ioFuture: IO[Response[IO]] =
+  Ok(IO.fromFuture(IO(Future {
+    println("I run when the future is constructed.")
+    "Greetings from the future!"
+  })))
 
 ioFuture.unsafeRunSync()
 
-val io = Ok(IO {
-  println("I run when the IO is run.")
-  "Mission accomplished!"
-})
+val io: IO[Response[IO]] =
+  Ok(IO {
+    println("I run when the IO is run.")
+    "Mission accomplished!"
+  })
 
 io.unsafeRunSync()
 
@@ -118,28 +122,34 @@ import scala.concurrent.duration._
 val drip: Stream[IO, String] =
   Stream.awakeEvery[IO](100.millis).map(_.toString).take(10)
 
-val dripOutIO = drip
-  .through(fs2.text.lines)
-  .evalMap(s => { IO { println(s); s } })
-  .compile
-  .drain
+val dripOutIO: IO[Unit] =
+  drip
+    .through(fs2.text.lines)
+    .evalMap(s => { IO { println(s); s } })
+    .compile
+    .drain
+
 dripOutIO.unsafeRunSync()
 
 Ok(drip)
-val body =
+
+val body: EntityBody[IO] =
   Ok(drip)
     .unsafeRunSync()
     .entity
     .body
+
 body
   .compile
   .toVector
   .unsafeRunSync()
+
 body
   .through(fs2.text.utf8.decode)
   .compile
   .toVector
   .unsafeRunSync()
+
 body
   .through(fs2.text.utf8.decode)
   .evalTap(IO.println)
@@ -157,28 +167,51 @@ body
 // 904075583 nanoseconds
 // 1001366169 nanoseconds
 
+import scala.util.chaining._
+import userguide.util._
+
 // ----- Matching and Extracting Requests -----
 
-HttpRoutes.of[IO] { case GET -> Root / "hello" =>
+val routes01 = HttpRoutes.of[IO] { case GET -> Root / "hello" =>
   Ok("hello")
 }
+routes01
+  .orNotFound
+  .run(Request[IO](method = Method.GET, uri = uri"/hello"))
+  .unsafeRunSync()
+  .pipe(evalBodyAsString)
 
-HttpRoutes.of[IO] { case GET -> Root =>
+val routes02 = HttpRoutes.of[IO] { case GET -> Root =>
   Ok("root")
 }
+routes02
+  .orNotFound
+  .run(Request[IO](method = Method.GET, uri = uri"/"))
+  .unsafeRunSync()
+  .pipe(evalBodyAsString)
 
-HttpRoutes.of[IO] { case GET -> Root / "hello" / name =>
+val routes03 = HttpRoutes.of[IO] { case GET -> Root / "hello" / name =>
   Ok(s"Hello, ${name}!")
 }
+routes03
+  .orNotFound
+  .run(Request[IO](method = Method.GET, uri = uri"/hello/Alice"))
+  .unsafeRunSync()
+  .pipe(evalBodyAsString)
 
-HttpRoutes.of[IO] { case GET -> "hello" /: rest =>
+val routes04 = HttpRoutes.of[IO] { case GET -> "hello" /: rest =>
   Ok(s"""Hello, ${rest.segments.mkString(" and ")}!""")
 }
+routes04
+  .orNotFound
+  .run(Request[IO](method = Method.GET, uri = uri"/hello/Alice/Bob"))
+  .unsafeRunSync()
+  .pipe(evalBodyAsString)
 
 HttpRoutes
   .of[IO] { case GET -> "hello" /: rest =>
     Ok(s"""Hello, ${rest.segments.mkString(" and ")}!""")
-  }                                                                   // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
+  } // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
   .orNotFound                                                         // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
   .run(Request[IO](method = Method.GET, uri = uri"/hello/Alice/Bob")) // : IO[Response[IO]]
   .unsafeRunSync()                                                    // : Response[IO]
@@ -190,36 +223,62 @@ HttpRoutes
   .head                                                               // : String
 // "Hello, Alice and Bob!"
 
-HttpRoutes.of[IO] { case GET -> Root / file ~ "json" =>
-  Ok(s"""{"response": "You asked for $file"}""")
+HttpRoutes.of[IO] { case GET -> IntVar(anInt) /: UUIDVar(anId) /: rest =>
+  Ok(s"""Hello $anInt / $anId, ${rest.segments.mkString(" and ")}!""")
 }
 
-import scala.util.chaining._
+val id    = 42
+val uuid  = java.util.UUID.fromString("6c6adbf5-c3b8-49ea-9034-7c4f66ac5e77")
+val req05 = Request[IO](method = Method.GET, uri = uri"/42/6c6adbf5-c3b8-49ea-9034-7c4f66ac5e77/Alice/Bob")
+
+val routes05 = HttpRoutes
+  .of[IO] { case GET -> IntVar(anInt) /: UUIDVar(anId) /: rest =>
+    Ok(s"""Hello $anInt / $anId, ${rest.segments.mkString(" and ")}!""")
+  }
+routes05
+  .orNotFound // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
+  .run(req05)      // : IO[Response[IO]]
+  .unsafeRunSync() // : Response[IO]
+  .pipe(evalBodyAsString)
+// "Hello 42 / 6c6adbf5-c3b8-49ea-9034-7c4f66ac5e77, Alice and Bob!"
 
 val suffix = "json"
-HttpRoutes
-  .of[IO] { case GET -> Root / file ~ suffix =>
-    Ok(s"""{"response": "You asked for file: $file.$suffix"}""")
-  }
-  .orNotFound // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
-  .run(Request[IO](method = Method.GET, uri = uri"/user.json")) // : IO[Response[IO]]
-  .unsafeRunSync()                                              // : Response[IO]
-  .body                                                         // : EntityBody[IO] ( = Stream[IO, Byte] )
-  .through(fs2.text.utf8.decode)                                // : Stream[IO, String]
-  .compile                                                      // : : Stream.CompileOps[IO, IO, String]
-  .toVector                                                     // : IO[Vector[String]]
-  .unsafeRunSync()                                              // : Vector[String]
-  .head                                                         // : String
-  .tap(println)
+
+val routes06 = HttpRoutes.of[IO] { case GET -> Root / file ~ suffix =>
+  Ok(s"""{"response": "You asked for file: $file.$suffix"}""")
+}
+
+val responseBody: String =
+  routes06
+    .orNotFound
+    .run(Request[IO](method = Method.GET, uri = uri"/user.json"))
+    .unsafeRunSync()
+    .pipe(evalBodyAsString)
+    .tap(println)
 // "{\"response\": \"You asked for file: user.json\"}"
 
-// Handling Path Parameters
-
-def getUserName(userId: Int): IO[String] = ???
-
-val usersService = HttpRoutes.of[IO] { case GET -> Root / "users" / IntVar(userId) =>
-  Ok(getUserName(userId))
+_root_.io.circe.parser.parse(responseBody).flatMap { json =>
+  json.hcursor.downField("response").as[String]
+} match {
+  case Right(response) => println(response)
+  case Left(error)     => println(error)
 }
+// You asked for file: user.json
+
+// ----- Handling Path Parameters -----
+
+def getUserName(userId: Int): IO[String] =
+  IO("John Dow" + userId.toString)
+
+val usersService =
+  HttpRoutes.of[IO] { case GET -> Root / "users" / IntVar(userId) =>
+    Ok(getUserName(userId))
+  }
+usersService
+  .orNotFound
+  .run(Request[IO](method = Method.GET, uri = uri"/users/42"))
+  .unsafeRunSync()
+  .pipe(evalBodyAsString)
 
 import java.time.LocalDate
 import scala.util.Try
@@ -237,14 +296,15 @@ object LocalDateVar {
 @annotation.nowarn("cat=unused")
 def getTemperatureForecast(date: LocalDate): IO[Double] = IO(31.5)
 
-val dailyWeatherService = HttpRoutes.of[IO] { case GET -> Root / "weather" / "temperature" / LocalDateVar(localDate) =>
-  Ok(
-    getTemperatureForecast(localDate)
-      .map(temp => s"The temperature on $localDate will be: $temp")
-  )
-}
+val dailyWeatherService =
+  HttpRoutes.of[IO] { case GET -> Root / "weather" / "temperature" / LocalDateVar(localDate) =>
+    Ok(
+      getTemperatureForecast(localDate)
+        .map(temp => s"The temperature on $localDate will be: $temp")
+    )
+  }
 
-val req = GET(uri"/weather/temperature/2022-08-05")
+val req = GET(uri"/weather/temperature/2023-08-05")
 
 dailyWeatherService              // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
   .orNotFound(req)               // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
@@ -256,14 +316,12 @@ dailyWeatherService              // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO
   .unsafeRunSync()               // : Vector[String]
   .head                          // : String
 
-import userguide.util._
-
 dailyWeatherService       // : HttpRoutes[IO] ( = Http[OptionT[IO, *], IO] )
   .orNotFound(req)        // : HttpApp[IO] ( = Kleisli[IO, Request[IO], Response[IO]] )
   .unsafeRunSync()        // : Response[IO]
   .pipe(evalBodyAsString) // : String
 
-// Handling Matrix Path Parameters
+// ----- Handling Matrix Path Parameters -----
 
 import org.http4s.dsl.impl.MatrixVar
 
@@ -295,7 +353,7 @@ greetingWithIdService
   .pipe(runWithRequest(_, GET(uri"/hello/name;first=john;last=doe;id=123/greeting")))
   .pipe(evalBodyAsString)
 
-// Handling Query Parameters
+// ----- Handling Query Parameters -----
 
 import java.time.Year
 
@@ -345,15 +403,16 @@ def getAverageTemperatureForCurrentYear: IO[String]   = IO("10.1")
 @annotation.nowarn("cat=unused")
 def getAverageTemperatureForYear(y: Year): IO[String] = IO("9.1")
 
-val routes = HttpRoutes
-  .of[IO] { case GET -> Root / "temperature" :? OptionalYearQueryParamMatcher(maybeYear) =>
-    maybeYear match {
-      case None       =>
-        Ok(getAverageTemperatureForCurrentYear)
-      case Some(year) =>
-        Ok(getAverageTemperatureForYear(year))
+val routes =
+  HttpRoutes
+    .of[IO] { case GET -> Root / "temperature" :? OptionalYearQueryParamMatcher(maybeYear) =>
+      maybeYear match {
+        case None       =>
+          Ok(getAverageTemperatureForCurrentYear)
+        case Some(year) =>
+          Ok(getAverageTemperatureForYear(year))
+      }
     }
-  }
 
 routes
   .pipe(runWithRequest(_, GET(uri"/temperature")))
@@ -363,6 +422,11 @@ routes
   .pipe(runWithRequest(_, GET(uri"/temperature?year=2021")))
   .pipe(evalBodyAsString)
 // 9.1
+
+// Missing Required Query Parameters
+// A request with a missing required query parameter will fall through to the following case statements
+// and may eventually return a 404. To provide contextual error handling, optional query parameters
+// or fallback routes can be used.
 
 // Invalid Query Parameter Handling
 

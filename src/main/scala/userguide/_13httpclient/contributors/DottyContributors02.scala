@@ -40,7 +40,8 @@ object DottyContributors02 extends IOApp.Simple {
 
   def sendGetRequest(client: Client[IO], uri: Uri): IO[Either[String, List[Json]]] = {
 
-    implicit def decodeListJson[A: Decoder]: EntityDecoder[IO, List[A]] = jsonOf[IO, List[A]]
+    implicit def decodeListJson[A: Decoder]: EntityDecoder[IO, List[A]] =
+      jsonOf[IO, List[A]]
     // implicitly[Decoder[Json]]
     // implicitly[Decoder[List[Json]]]
 
@@ -69,10 +70,4 @@ object DottyContributors02 extends IOApp.Simple {
         contributors.sortBy(_.contributions).reverse
       }
       .leftMap(_.toString)
-
-  def contributorJson2Contributor(contributorJson: Json): Either[Error, Contributor] =
-    for {
-      login         <- contributorJson.hcursor.downField("login").as[String]
-      contributions <- contributorJson.hcursor.downField("contributions").as[Int]
-    } yield Contributor(login, contributions)
 }

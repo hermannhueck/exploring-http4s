@@ -50,13 +50,15 @@ val dummyRequest: Request[IO] =
 val middleware =
   csrf
     .validate()
-val resp       = middleware(service.orNotFound)(dummyRequest)
-  .unsafeRunSync()
-  .ensuring { r =>
-    r.status == Status.Ok &&
-    r.headers.get(CIString("Set-Cookie")).isDefined &&
-    r.headers.get(CIString("Set-Cookie")).get.head.value.startsWith("csrf-token=")
-  }
+
+val resp =
+  middleware(service.orNotFound)(dummyRequest)
+    .unsafeRunSync()
+    .ensuring { r =>
+      r.status == Status.Ok &&
+      r.headers.get(CIString("Set-Cookie")).isDefined &&
+      r.headers.get(CIString("Set-Cookie")).get.head.value.startsWith("csrf-token=")
+    }
 
 val cookie = resp.cookies.head
 
@@ -69,8 +71,7 @@ val dummyPostRequest: Request[IO] =
     .addCookie(RequestCookie(cookie.name, cookie.content))
 
 val validateResp =
-  csrf
-    .validate()(service.orNotFound)(dummyPostRequest)
+  middleware(service.orNotFound)(dummyPostRequest)
     .unsafeRunSync()
     .ensuring { r =>
       r.status == Status.Ok &&

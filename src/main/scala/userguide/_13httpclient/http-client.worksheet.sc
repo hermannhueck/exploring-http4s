@@ -41,8 +41,8 @@ val helloEmber: IO[String] =
 
 // Running the call
 
-// helloJames.unsafeRunSync()
-// helloEmber.unsafeRunSync()
+helloJames.unsafeRunSync()
+helloEmber.unsafeRunSync()
 
 // Describing 4 calls
 
@@ -60,7 +60,7 @@ val greetingsStringEffect = greetingList.map(_.mkString("\n"))
 // Running the calls
 
 // requires running server
-// greetingsStringEffect.unsafeRunSync()
+greetingsStringEffect.unsafeRunSync()
 
 // Constructing a URI
 
@@ -69,8 +69,9 @@ uri"https://my-awesome-service.com/foo/bar?wow=yeah"
 val validUri   = "https://my-awesome-service.com/foo/bar?wow=yeah"
 val invalidUri = "yeah whatever"
 
-val uri: Either[ParseFailure, Uri]          = Uri.fromString(validUri)
-val parseFailure: Either[ParseFailure, Uri] = Uri.fromString(invalidUri)
+// type ParseResult[+A] = Either[ParseFailure, A]
+val uri: ParseResult[Uri]          = Uri.fromString(validUri)
+val parseFailure: ParseResult[Uri] = Uri.fromString(invalidUri)
 
 // You can also build up a URI incrementally, e.g.:
 
@@ -143,7 +144,8 @@ val request: Request[IO] = GET(
 import org.typelevel.ci.CIString
 import munit.Assertions._
 
-val headers = request.headers.headers.map(hr => hr.name.toString -> hr.value).toMap
+val headers =
+  request.headers.headers.map(hr => hr.name.toString -> hr.value).toMap
 assertEquals(headers.get("Authorization"), Some("Bearer open sesame"))
 assertEquals(headers.get("Accept"), Some("application/json"))
 
@@ -171,7 +173,8 @@ val postRequest = POST(
   uri"https://my-lovely-api.com/oauth2/token"
 )
 
-httpClient.expect[AuthResponse](postRequest)
+val authRespose: IO[AuthResponse] =
+  httpClient.expect[AuthResponse](postRequest)
 
 // ----- Body decoding / encoding -----
 
@@ -187,4 +190,4 @@ val result   = httpClient.get[Either[String, String]](endpoint) {
       .as[String]
       .map(body => Left(s"Request failed with status '${response.status.code}' and body '$body'"))
 }
-// result.unsafeRunSync()
+result.unsafeRunSync()

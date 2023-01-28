@@ -11,9 +11,10 @@ import org.http4s.server.Router
 
 object FirstServiceApp extends IOApp {
 
-  val helloWorldService = HttpRoutes.of[IO] { case GET -> Root / "hello" / name =>
-    Ok(s"Hello, $name.")
-  }
+  val helloWorldService =
+    HttpRoutes.of[IO] { case GET -> Root / "hello" / name =>
+      Ok(s"Hello, $name.")
+    }
 
   case class Tweet(id: Int, message: String)
 

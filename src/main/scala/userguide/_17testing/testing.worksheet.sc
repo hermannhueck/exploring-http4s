@@ -18,14 +18,13 @@ trait UserRepo[F[_]] {
   def find(userId: String): F[Option[User]]
 }
 
-def httpRoutes[F[_]: Async](
-    repo: UserRepo[F]
-): HttpRoutes[F] = HttpRoutes.of[F] { case GET -> Root / "user" / id =>
-  repo.find(id).map {
-    case None       => Response(status = Status.NotFound)
-    case Some(user) => Response(status = Status.Ok).withEntity(user.asJson)
+def httpRoutes[F[_]: Async](repo: UserRepo[F]): HttpRoutes[F] =
+  HttpRoutes.of[F] { case GET -> Root / "user" / id =>
+    repo.find(id).map {
+      case None       => Response(status = Status.NotFound)
+      case Some(user) => Response(status = Status.Ok).withEntity(user.asJson)
+    }
   }
-}
 
 // Return true if match succeeds; otherwise false
 def check[A](

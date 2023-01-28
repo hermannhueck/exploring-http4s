@@ -97,4 +97,5 @@ val responseIO       = requestIdService.orNotFound(goodRequest)
 
 val resp = responseIO.unsafeRunSync()
 resp.headers
+resp.attributes
 resp.attributes.lookup(RequestId.requestIdAttrKey)

@@ -63,10 +63,4 @@ object DottyContributors01 extends IOApp.Simple {
       .sortBy(_.contributions)
       .reverse
   }.leftMap(_.toString)
-
-  def contributorJson2Contributor(contributorJson: Json): Either[Error, Contributor] =
-    for {
-      login         <- contributorJson.hcursor.downField("login").as[String]
-      contributions <- contributorJson.hcursor.downField("contributions").as[Int]
-    } yield Contributor(login, contributions)
 }

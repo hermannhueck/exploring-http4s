@@ -37,12 +37,16 @@ case class User(name: String)
 
 import io.circe.syntax._
 
+// Encoding using a custom encoder for case class 'Hello'
+
 implicit val HelloEncoder: Encoder[Hello] =
-  Encoder.instance { (hello: Hello) =>
+  Encoder.instance { hello: Hello =>
     json"""{"hello": ${hello.name}}"""
   }
 
 Hello("Alice").asJson
+
+// Encoding using io.circe.generic.auto._ for case class 'Hello'
 
 import io.circe.generic.auto._
 
@@ -60,8 +64,19 @@ POST("""{"name":"Bob"}""", uri"/hello").as[Json].unsafeRunSync()
 
 // ----- Decoding JSON to a case class -----
 
+// Encoding using a custom decoder for case class 'User'
+
 implicit val userDecoder = jsonOf[IO, User]
 
 Ok("""{"name":"Alice"}""").flatMap(_.as[User]).unsafeRunSync()
 
 POST("""{"name":"Bob"}""", uri"/hello").as[User].unsafeRunSync()
+
+/*
+  For convenient encoding/decoding use:
+
+  import org.http4s.circe.CirceEntityEncoder._
+  import org.http4s.circe.CirceEntityDecoder._
+  import org.http4s.circe.CirceEntityCodec._
+
+ */
