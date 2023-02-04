@@ -3,3 +3,7 @@ GET http://localhost:8080/hello/hermann
 ###
 
 GET http://localhost:8080/joke
+
+###
+
+GET https://api.github.com/repos/lampepfl/dotty/contributors
