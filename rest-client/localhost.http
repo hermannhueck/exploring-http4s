@@ -6,4 +6,9 @@ GET http://localhost:8080/joke
 
 ###
 
+GET https://icanhazdadjoke.com/
+Accept: application/json
+
+###
+
 GET https://api.github.com/repos/lampepfl/dotty/contributors
