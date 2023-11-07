@@ -166,38 +166,33 @@ object Http4sTutorial extends IOApp.Simple {
     allRoutes.orNotFound
   }
 
-  import org.http4s.server.blaze.BlazeServerBuilder
-  // import scala.concurrent.ExecutionContext.global
-
-  // val movieApp = allRoutesComplete[IO]
-  // BlazeServerBuilder[IO](global)
-  //   .bindHttp(8080, "localhost")
-  //   .withHttpApp(movieApp)
-  // // ...it's not finished yet
-
-  val apis = Router(
-    "/api"         -> movieRoutes[IO],
-    "/api/private" -> directorRoutes[IO]
+  def apis[F[_]: Concurrent] = Router(
+    "/api"         -> movieRoutes[F],
+    "/api/private" -> directorRoutes[F]
   ).orNotFound
 
-  // BlazeServerBuilder[IO](global)
-  //   .bindHttp(8080, "localhost")
-  //   .withHttpApp(apis)
+  // import org.http4s.server.blaze.BlazeServerBuilder
 
-  @annotation.nowarn("cat=deprecation")
-  override def run: IO[Unit] =
-    BlazeServerBuilder[IO](runtime.compute)
-      .bindHttp(8080, "localhost")
+  // @annotation.nowarn("cat=deprecation")
+  // def server[F[_]: Async]: Resource[F, org.http4s.server.Server] =
+  //   BlazeServerBuilder
+  //     .apply[F](runtime.compute)
+  //     .bindHttp(8080, "localhost")
+  //     .withHttpApp(apis)
+  //     .resource
+
+  import org.http4s.ember.server._
+  import com.comcast.ip4s._
+
+  def server[F[_]: Async]: Resource[F, org.http4s.server.Server] =
+    EmberServerBuilder
+      .default[F]
+      .withHost(ipv4"0.0.0.0")
+      .withPort(port"8080")
       .withHttpApp(apis)
-      .resource
-      .use(_ => IO.never)
-  // .as(ExitCode.Success)
+      .build
 
-  // import hutil.stringformat._
-  // val run: IO[Unit] =
-  //   for {
-  //     _ <- IO.println(dash80.green)
-  //     _ <- IO.println("Hello Http4s")
-  //     _ <- IO.println(dash80.green)
-  //   } yield ()
+  override val run: IO[Unit] =
+    server[IO]
+      .use(_ => IO.never)
 }

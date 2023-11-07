@@ -4,8 +4,8 @@ object Dependencies {
 
   import Versions._
 
-  lazy val http4sBlazeServer = "org.http4s"      %% "http4s-blaze-server" % http4sBlazeVersion
-  lazy val http4sBlazeClient = "org.http4s"      %% "http4s-blaze-client" % http4sBlazeVersion
+  // lazy val http4sBlazeServer = "org.http4s"      %% "http4s-blaze-server" % http4sBlazeVersion
+  // lazy val http4sBlazeClient = "org.http4s"      %% "http4s-blaze-client" % http4sBlazeVersion
   lazy val http4sEmberServer = "org.http4s"      %% "http4s-ember-server" % http4sVersion
   lazy val http4sEmberClient = "org.http4s"      %% "http4s-ember-client" % http4sVersion
   lazy val http4sDsl         = "org.http4s"      %% "http4s-dsl"          % http4sVersion
@@ -34,10 +34,10 @@ object Dependencies {
   )
 
   lazy val libraryDependencies = Seq(
-    http4sBlazeServer,
+    // http4sBlazeServer,
+    // http4sBlazeClient,
     http4sEmberServer,
     http4sEmberClient,
-    http4sBlazeClient,
     http4sDsl,
     http4sCirce,
     circeCore,

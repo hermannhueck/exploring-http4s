@@ -1,7 +1,6 @@
 package userguide._13httpclient.contributors
 
 import cats.effect.{IO, IOApp}
-import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.client.Client
 import org.http4s._
 
@@ -24,6 +23,17 @@ object DottyContributors04 extends IOApp.Simple {
       case Right(uri)  => getContributorsFromUri(uri)
     }
   }
+
+  // import org.http4s.blaze.client.BlazeClientBuilder
+
+  // def getContributorsFromUri(uri: Uri): IO[Either[String, List[Contributor]]] =
+  //   BlazeClientBuilder[IO]
+  //     .resource
+  //     .use { client: Client[IO] =>
+  //       sendGetRequest(client, uri)
+  //     }
+
+  import org.http4s.ember.client.EmberClientBuilder
 
   def getContributorsFromUri(uri: Uri): IO[Either[String, List[Contributor]]] =
     EmberClientBuilder
