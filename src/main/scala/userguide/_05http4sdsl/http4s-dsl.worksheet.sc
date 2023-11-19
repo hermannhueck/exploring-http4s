@@ -46,6 +46,30 @@ HttpRoutes
   .run(getRoot)
   .unsafeRunSync()
 
+HttpRoutes
+  .of[IO] { case _ =>
+    Conflict()
+  }
+  .orNotFound
+  .run(getRoot)
+  .unsafeRunSync()
+
+HttpRoutes
+  .of[IO] { case _ =>
+    Created()
+  }
+  .orNotFound
+  .run(getRoot)
+  .unsafeRunSync()
+
+HttpRoutes
+  .of[IO] { case _ =>
+    Forbidden()
+  }
+  .orNotFound
+  .run(getRoot)
+  .unsafeRunSync()
+
 // Headers
 
 Ok("Ok response.").unsafeRunSync()
