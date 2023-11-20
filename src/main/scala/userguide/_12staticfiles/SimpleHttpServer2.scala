@@ -9,8 +9,13 @@ import org.http4s.server._
 import org.http4s.server.staticcontent._
 import org.http4s.dsl._
 import org.http4s.dsl.io._
+import fs2.io.file.Files
 
 object SimpleHttpServer2 extends IOApp {
+
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
 
   val indexServiceIO: HttpRoutes[IO] =
     HttpRoutes.of[IO] { case request @ GET -> Root / "index.html" =>
@@ -19,7 +24,7 @@ object SimpleHttpServer2 extends IOApp {
         .getOrElseF(NotFound()) // In case the file doesn't exist
     }
 
-  def indexService[F[_]: Async]: HttpRoutes[F] =
+  def indexService[F[_]: Async: Files: LoggerFactory]: HttpRoutes[F] =
     HttpRoutes.of[F] { case request @ GET -> Root / "index.html" =>
       val dsl = new Http4sDsl[F] {}
       import dsl._
@@ -35,7 +40,7 @@ object SimpleHttpServer2 extends IOApp {
       Ok("HELLO WORLD !!!\n")
     }
 
-  def httpApp[F[_]: Async]: HttpApp[F] =
+  def httpApp[F[_]: Async: Files: LoggerFactory]: HttpApp[F] =
     Router[F](
       "/"      -> indexService,
       "assets" -> fileService(FileService.Config("./assets")),

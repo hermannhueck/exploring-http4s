@@ -34,6 +34,10 @@ object HelloServerApp extends IOApp.Simple {
       }
       .orNotFound
 
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   def server(app: HttpApp[IO]): Resource[IO, Server] =
     EmberServerBuilder
       .default[IO]

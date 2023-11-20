@@ -17,6 +17,10 @@ import Domain._
 
 object HelloClientApp extends IOApp.Simple {
 
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   def helloClient(name: String): IO[Hello] = {
     // Encode a User request
     val req = POST(User(name).asJson, uri"http://localhost:8080/hello")

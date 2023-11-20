@@ -8,6 +8,7 @@ import com.comcast.ip4s._
 import org.http4s.ember.server._
 import org.http4s.implicits._
 import org.http4s.server.Router
+import fs2.io.net.Network
 
 object FirstServiceApp2 extends IOApp {
 
@@ -43,12 +44,17 @@ object FirstServiceApp2 extends IOApp {
 
   def httpApp[F[_]: Sync] = Router("/" -> helloWorldService[F], "/api" -> services).orNotFound
 
-  def server[F[_]: Async] = EmberServerBuilder
-    .default[F]
-    .withHost(ipv4"0.0.0.0")
-    .withPort(port"8080")
-    .withHttpApp(httpApp)
-    .build
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
+  def server[F[_]: Async: Network: LoggerFactory] =
+    EmberServerBuilder
+      .default[F]
+      .withHost(ipv4"0.0.0.0")
+      .withPort(port"8080")
+      .withHttpApp(httpApp)
+      .build
 
   override def run(args: List[String]): IO[ExitCode] =
     server[IO]

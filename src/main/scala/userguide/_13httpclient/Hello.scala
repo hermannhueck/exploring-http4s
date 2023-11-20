@@ -7,6 +7,10 @@ import hutil.stringformat._
 
 object Hello extends IOApp.Simple {
 
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   val run: IO[Unit] = for {
     _ <- IO.println(dash80.green)
     _ <- EmberClientBuilder

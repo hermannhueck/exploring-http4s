@@ -35,6 +35,10 @@ object DottyContributors04 extends IOApp.Simple {
 
   import org.http4s.ember.client.EmberClientBuilder
 
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   def getContributorsFromUri(uri: Uri): IO[Either[String, List[Contributor]]] =
     EmberClientBuilder
       .default[IO]

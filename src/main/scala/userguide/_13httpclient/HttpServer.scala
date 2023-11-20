@@ -19,6 +19,10 @@ object HttpServer extends IOApp.Simple {
     }
     .orNotFound
 
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   val finalHttpApp = Logger.httpApp(true, true)(app)
 
   val run: IO[Unit] = EmberServerBuilder

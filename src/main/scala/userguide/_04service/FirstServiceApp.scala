@@ -35,6 +35,10 @@ object FirstServiceApp extends IOApp {
 
   val httpApp = Router("/" -> helloWorldService, "/api" -> services).orNotFound
 
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   val server = EmberServerBuilder
     .default[IO]
     .withHost(ipv4"0.0.0.0")

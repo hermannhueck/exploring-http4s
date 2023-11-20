@@ -13,7 +13,10 @@ import io.circe.Json
 import org.typelevel.jawn.Facade
 import org.typelevel.jawn.fs2._
 
-class TWStream[F[_]: Async] {
+import org.typelevel.log4cats.LoggerFactory
+import fs2.io.net.Network
+
+class TWStream[F[_]: Async: Network: LoggerFactory] {
 
   // jawn-fs2 needs to know what JSON AST you want
   implicit val f: Facade[Json] =
@@ -68,6 +71,11 @@ class TWStream[F[_]: Async] {
 }
 
 object TWStreamApp extends IOApp.Simple {
+
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   val run =
     new TWStream[IO].run.void
 }

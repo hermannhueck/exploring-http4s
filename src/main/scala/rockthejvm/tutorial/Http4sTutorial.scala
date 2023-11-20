@@ -183,14 +183,19 @@ object Http4sTutorial extends IOApp.Simple {
 
   import org.http4s.ember.server._
   import com.comcast.ip4s._
+  import fs2.io.net.Network
+  import org.typelevel.log4cats.LoggerFactory
 
-  def server[F[_]: Async]: Resource[F, org.http4s.server.Server] =
+  def server[F[_]: Async: Network: LoggerFactory]: Resource[F, org.http4s.server.Server] =
     EmberServerBuilder
       .default[F]
       .withHost(ipv4"0.0.0.0")
       .withPort(port"8080")
       .withHttpApp(apis)
       .build
+
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
 
   override val run: IO[Unit] =
     server[IO]

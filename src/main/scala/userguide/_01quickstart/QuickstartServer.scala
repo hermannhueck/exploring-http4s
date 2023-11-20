@@ -8,10 +8,13 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
+import fs2.io.net.Network
 
 object QuickstartServer {
 
-  def stream[F[_]: Async]: Stream[F, Nothing] = {
+  import org.typelevel.log4cats.LoggerFactory
+
+  def stream[F[_]: Async: Network: LoggerFactory]: Stream[F, Nothing] = {
     for {
       client       <- Stream.resource(EmberClientBuilder.default[F].build)
       helloWorldAlg = HelloWorld.impl[F]

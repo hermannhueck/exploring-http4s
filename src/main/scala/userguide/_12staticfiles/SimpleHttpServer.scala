@@ -8,6 +8,10 @@ import org.http4s.server.staticcontent._
 
 object SimpleHttpServer extends IOApp {
 
+  import org.typelevel.log4cats.LoggerFactory
+  import org.typelevel.log4cats.slf4j.Slf4jFactory
+  implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   val app: Resource[IO, Server] =
     EmberServerBuilder
       .default[IO]
