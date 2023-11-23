@@ -72,11 +72,23 @@ val apiRequest     = Request[IO](Method.GET, uri"/api")
 val anotherRequest = Request[IO](Method.GET, uri"/another")
 
 // runs through the middleware
-aggregateService.orNotFound(goodRequest).unsafeRunSync().headers
-aggregateService.orNotFound(anotherRequest).unsafeRunSync().headers
+aggregateService
+  .orNotFound(goodRequest)
+  .unsafeRunSync()
+  .headers
+aggregateService
+  .orNotFound(anotherRequest)
+  .unsafeRunSync()
+  .headers
 // doesn't run through the middleware
-aggregateService.orNotFound(apiRequest).unsafeRunSync().headers
-aggregateService.orNotFound(badRequest).unsafeRunSync().headers
+aggregateService
+  .orNotFound(apiRequest)
+  .unsafeRunSync()
+  .headers
+aggregateService
+  .orNotFound(badRequest)
+  .unsafeRunSync()
+  .headers
 
 // ----- Included Middleware -----
 
