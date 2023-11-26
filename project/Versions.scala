@@ -12,6 +12,7 @@ object Versions {
   // val http4sBlazeVersion = "1.0.0-M38"
   val circeVersion       = "0.15.0-M1"
   // val circeVersion      = "0.14.2"
+  val cirisVersion       = "3.5.0"
   val munitVersion       = "0.7.29"
   val munitCE3Version    = "1.0.7"
   val scalaCheckVersion  = "1.17.0"

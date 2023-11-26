@@ -14,6 +14,8 @@ object Dependencies {
   lazy val circeLiteral      = "io.circe"        %% "circe-literal"       % circeVersion
   lazy val circeCore         = "io.circe"        %% "circe-core"          % circeVersion
   lazy val circeParser       = "io.circe"        %% "circe-parser"        % circeVersion
+  lazy val ciris             = "is.cir"          %% "ciris"               % cirisVersion
+  lazy val cirisCirce        = "is.cir"          %% "ciris-circe"         % cirisVersion
   lazy val munit             = "org.scalameta"   %% "munit"               % munitVersion
   lazy val scalaCheck        = "org.scalacheck"  %% "scalacheck"          % scalaCheckVersion
   lazy val munitCE3          = "org.typelevel"   %% "munit-cats-effect-3" % munitCE3Version
@@ -44,6 +46,8 @@ object Dependencies {
     circeParser,
     circeGeneric,
     circeLiteral,
+    ciris,
+    cirisCirce,
     reactormonk,
     munit, // use munit also for compiling
     munitCE3 % Test,
