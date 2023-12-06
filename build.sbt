@@ -36,3 +36,11 @@ lazy val root = (project in file("."))
     Compile / console / scalacOptions := ScalacOptions.consoleScalacOptions,
     libraryDependencies ++= Dependencies.libraryDependencies
   )
+
+lazy val http4sAuthentication = (project in file("http4sauth"))
+  .settings(
+    name                              := "http4sAuthentication",
+    description                       := "Http4s Authentication",
+    Compile / console / scalacOptions := ScalacOptions.consoleScalacOptions,
+    libraryDependencies ++= Dependencies.http4sAuthDependencies
+  )
